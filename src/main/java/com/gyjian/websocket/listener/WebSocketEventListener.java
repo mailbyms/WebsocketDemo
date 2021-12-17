@@ -1,10 +1,13 @@
 package com.gyjian.websocket.listener;
 
 import com.gyjian.websocket.model.ChatMessage;
+import com.gyjian.websocket.util.JsonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.stereotype.Component;
@@ -18,6 +21,15 @@ public class WebSocketEventListener {
 
     @Autowired
     private SimpMessageSendingOperations messagingTemplate;
+
+    @Autowired
+    private RedisTemplate<String, String> redisTemplate;
+
+    @Value("${redis.channel.userStatus}")
+    private String userStatus;
+
+    @Value("${redis.set.onlineUsers}")
+    private String onlineUsers;
 
     /**
      * 已经在ChatController中定义的addUser（）方法中广播了用户加入事件。因此，我们不需要在SessionConnected事件中执行任何操作。
@@ -45,7 +57,12 @@ public class WebSocketEventListener {
             chatMessage.setType(ChatMessage.MessageType.LEAVE);
             chatMessage.setSender(username);
 
-            messagingTemplate.convertAndSend("/topic/public", chatMessage);  //向所有连接的客户端广播用户离开事件
+            try {
+                redisTemplate.opsForSet().remove(onlineUsers, username);
+                redisTemplate.convertAndSend(userStatus, JsonUtil.parseObjToJson(chatMessage));
+            } catch (Exception e) {
+                logger.error(e.getMessage(), e);
+            }
         }else{
             logger.error("WebSocket username is NULL");
         }

@@ -1,8 +1,12 @@
 package com.gyjian.websocket.controller;
 
 import com.gyjian.websocket.model.ChatMessage;
+import com.gyjian.websocket.util.JsonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
@@ -18,15 +22,30 @@ import org.springframework.stereotype.Controller;
 public class ChatController {
     private static final Logger logger = LoggerFactory.getLogger(ChatController.class);
 
+    @Value("${redis.channel.msgToAll}")
+    private String msgToAll;
+
+    @Value("${redis.channel.userStatus}")
+    private String userStatus;
+
+    @Value("${redis.set.onlineUsers}")
+    private String onlineUsers;
+
+    @Autowired
+    private RedisTemplate<String, String> redisTemplate;
+
     /**
      * 客户端发送到 /app/chat.sendMessage 时，把消息路由到 /topic/public ，即所有人都能收到
      * @param chatMessage
      * @return
      */
     @MessageMapping("/chat.sendMessage")
-    @SendTo("/topic/public")
-    public ChatMessage sendMessage(@Payload ChatMessage chatMessage) {
-        return chatMessage;
+    public void sendMessage(@Payload ChatMessage chatMessage) {
+        try {
+            redisTemplate.convertAndSend(msgToAll, JsonUtil.parseObjToJson(chatMessage));
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
     }
 
     /**
@@ -42,6 +61,11 @@ public class ChatController {
 
         // Add username in web socket session
         headerAccessor.getSessionAttributes().put("username", chatMessage.getSender());
+
+        // 往redis中广播用户上线的消息，并把用户名username写入redis的set中（websocket.onlineUsers
+        redisTemplate.opsForSet().add(onlineUsers, chatMessage.getSender());
+        redisTemplate.convertAndSend(userStatus, JsonUtil.parseObjToJson(chatMessage));
+
         return chatMessage;
     }
 

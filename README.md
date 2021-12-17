@@ -20,3 +20,16 @@
 
 ## 注意
 - 目前消息都广播发送，并没有一对一发消息
+
+【以上是 tag 1.0_standalone 的内容】
+
+## tag2.0_cluster
+集群版本，改为2个服务器，共用一个 redis作消息队列代理，
+- 改动内容
+> redis 开启消息队列
+> 2个服务器都订阅 redis 的消息队列
+> 2个服务器收到消息，都发到 redis 的消息队列
+- 使用方法
+> IDEA 在 Run/Debug Configurations 里设置 Allow mutiple instances（允许多个实例同时运行）  
+> 分别设置服务器为 8080， 8081 端口，运行  
+> 用户 A 和 B 分别登录 2 个服务器，发消息都能看到
