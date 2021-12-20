@@ -25,15 +25,15 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.setApplicationDestinationPrefixes("/app");
 
         //使用内存中的消息代理。以“/topic”开头的消息应该路由到消息代理。消息代理向订阅特定主题的所有连接客户端广播消息
-        registry.enableSimpleBroker("/topic");
+        //registry.enableSimpleBroker("/topic");
 
         // （可选：使用 RabbitMQ / ActiveMQ 作为消息代理）
-        /** Use this for enabling a Full featured broker like RabbitMQ
+        /** Use this for enabling a Full featured broker like RabbitMQ */
         registry.enableStompBrokerRelay("/topic")
-                .setRelayHost("localhost")
+                .setRelayHost("192.168.1.70")
                 .setRelayPort(61613)
                 .setClientLogin("guest")
                 .setClientPasscode("guest");
-        */
+
     }
 }

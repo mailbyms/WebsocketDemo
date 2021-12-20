@@ -20,6 +20,7 @@
 
 ## 注意
 - 目前消息都广播发送，并没有一对一发消息
+- 如果使用 RabbitMQ 代理消息，需要在 RabbitMQ 里打开 plugin `rabbitmq_stomp` （会监听 61613 端口）
 
 【以上是 tag 1.0_standalone 的内容】
 
